@@ -7,8 +7,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+    },
     userId: {
       type: Number,
+      index: true,
     },
     role: {
       type: String,
@@ -18,6 +27,17 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       required: true,
+    },
+    device: {
+      // deviceToken: {
+      //   type: String,
+      // },
+      // deviceName: {
+      //   type: String,
+      // },
+      ipAddess: {
+        type: String,
+      },
     },
   },
   { timestamps: true }

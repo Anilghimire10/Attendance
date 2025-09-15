@@ -10,10 +10,39 @@ const register = async (req, res) => {
   }
 };
 
+// const login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     // Validate input
+//     if (!email || !password) {
+//       return ApiResponse.error(res, "Missing required fields", 400);
+//     }
+
+//     const { token, user, role } = await userService.login(
+//       { email, password },
+//       req
+//     );
+//     return ApiResponse.success(
+//       res,
+//       "Login successful",
+//       { token, user, role },
+//       200
+//     );
+//   } catch (error) {
+//     return ApiResponse.error(res, `Login failed: ${error.message}`, 400);
+//   }
+// };
+
 const login = async (req, res) => {
   try {
-    const { token, user } = await userService.login(req.body);
-    return ApiResponse.success(res, "Login successful", { token, user }, 200);
+    const { token, user, role } = await userService.login(req.body);
+    return ApiResponse.success(
+      res,
+      "Login successful",
+      { token, user, role },
+      200
+    );
   } catch (error) {
     return ApiResponse.error(res, `Login failed: ${error.message}`, 400);
   }
@@ -35,7 +64,6 @@ const createUserByAdmin = async (req, res) => {
     );
   }
 };
-
 const getAttendance = async (req, res) => {
   try {
     const adminId = req.user.id;

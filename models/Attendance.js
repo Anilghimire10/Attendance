@@ -28,6 +28,15 @@ const attendanceSchema = new mongoose.Schema(
           type: Date,
           default: Date.now,
         },
+        checkOut: {
+          type: Date,
+          default: null,
+        },
+        status: {
+          type: String,
+          enum: ["checked-in", "checked-out"],
+          default: "checked-in",
+        },
       },
     ],
   },

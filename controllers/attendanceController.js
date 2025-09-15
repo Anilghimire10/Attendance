@@ -65,7 +65,47 @@ const markAttendance = async (sessionId, user) => {
   }
 };
 
+const markCheckout = async (sessionId, userId) => {
+  try {
+    const attendance = await Attendance.findOne({ sessionId });
+
+    if (!attendance) {
+      throw new Error("Attendance session not found");
+    }
+
+    const userIndex = attendance.users.findIndex((u) => u.userId === userId);
+
+    if (userIndex === -1) {
+      throw new Error(
+        "User not found in attendance record. Please check in first."
+      );
+    }
+
+    const user = attendance.users[userIndex];
+
+    if (user.status === "checked-out") {
+      throw new Error("User is already checked out");
+    }
+
+    user.checkOut = new Date();
+    user.status = "checked-out";
+
+    await attendance.save();
+
+    return {
+      userId: user.userId,
+      userName: user.userName,
+      checkIn: user.checkIn,
+      checkOut: user.checkOut,
+      status: user.status,
+    };
+  } catch (error) {
+    throw new Error(error.message || "Failed to mark checkout");
+  }
+};
+
 module.exports = {
   getDailyAttendance,
   markAttendance,
+  markCheckout,
 };
