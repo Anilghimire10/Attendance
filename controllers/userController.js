@@ -10,7 +10,6 @@ const register = async (req, res) => {
   }
 };
 
-// Updated controller login function
 const login = async (req, res) => {
   try {
     const userAgent = req.headers["user-agent"] || "Unknown";
@@ -48,6 +47,7 @@ const createUserByAdmin = async (req, res) => {
     );
   }
 };
+
 const getAttendance = async (req, res) => {
   try {
     const adminId = req.user.id;

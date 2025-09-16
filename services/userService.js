@@ -167,6 +167,14 @@ const getAttendanceByRange = async (adminId, filters) => {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        checkOut: user.checkOut,
+        checkOutTime: user.checkOut
+          ? new Date(user.checkOut).toLocaleTimeString("en-US", {
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : null,
       })),
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
