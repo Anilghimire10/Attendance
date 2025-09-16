@@ -29,4 +29,6 @@ router.get(
   userController.getAttendance
 );
 
+router.get("/", authMiddleware(), userController.getProfile);
+
 module.exports = router;

@@ -28,44 +28,7 @@ const register = async (userData) => {
   return newUser;
 };
 
-// const login = async ({ email, password, deviceToken, deviceName }, req) => {
-//   let user = await Admin.findOne({ email });
-//   let role = "admin";
-
-//   if (!user) {
-//     user = await User.findOne({ email });
-//     role = "user";
-//   }
-
-//   if (!user) throw new Error("Invalid email or password");
-
-//   const isMatch = await bcrypt.compare(password, user.password);
-//   if (!isMatch) throw new Error("Invalid email or password");
-
-//   // Get IP address from request
-//   const ipAddress =
-//     req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-
-//   if (!user.firstLoginDevice || !user.firstLoginDevice.deviceToken) {
-//     user.firstLoginDevice = {
-//       deviceToken,
-//       ipAddress,
-//       deviceName,
-//       loginTime: new Date(),
-//     };
-//     await user.save();
-//   }
-
-//   const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, {
-//     expiresIn: "1d",
-//   });
-
-//   return { token, user, role };
-// };
-
-// services/userService.js
-// services/userService.js
-const login = async ({ email, password }) => {
+const login = async ({ email, password, deviceToken, userAgent }) => {
   let user = await Admin.findOne({ email });
   let role = "admin";
 
@@ -79,11 +42,16 @@ const login = async ({ email, password }) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid email or password");
 
-  const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, {
+  const loginToken = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
 
-  return { token, user, role };
+  if (deviceToken) {
+    user.device.push({ token: deviceToken, userAgent });
+    await user.save();
+  }
+
+  return { token: loginToken, user, role };
 };
 
 const createUserByAdmin = async (adminId, userData) => {
@@ -235,9 +203,36 @@ const getAttendanceByRange = async (adminId, filters) => {
   }
 };
 
+const getProfile = async (userId) => {
+  try {
+    let user = await User.findById(userId).select(
+      "userName email userId role "
+    );
+
+    if (user) {
+      return {
+        ...user.toObject(),
+      };
+    }
+
+    let admin = await Admin.findById(userId).select("userName email role ");
+
+    if (admin) {
+      return {
+        ...admin.toObject(),
+      };
+    }
+
+    throw new Error("User not found");
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   register,
   login,
   createUserByAdmin,
   getAttendanceByRange,
+  getProfile,
 };

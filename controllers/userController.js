@@ -10,33 +10,17 @@ const register = async (req, res) => {
   }
 };
 
-// const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // Validate input
-//     if (!email || !password) {
-//       return ApiResponse.error(res, "Missing required fields", 400);
-//     }
-
-//     const { token, user, role } = await userService.login(
-//       { email, password },
-//       req
-//     );
-//     return ApiResponse.success(
-//       res,
-//       "Login successful",
-//       { token, user, role },
-//       200
-//     );
-//   } catch (error) {
-//     return ApiResponse.error(res, `Login failed: ${error.message}`, 400);
-//   }
-// };
-
+// Updated controller login function
 const login = async (req, res) => {
   try {
-    const { token, user, role } = await userService.login(req.body);
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const deviceToken = req.body.deviceToken;
+    console.log("Device token:", deviceToken);
+    const { token, user, role } = await userService.login({
+      ...req.body,
+      deviceToken,
+      userAgent,
+    });
     return ApiResponse.success(
       res,
       "Login successful",
@@ -94,4 +78,30 @@ const getAttendance = async (req, res) => {
   }
 };
 
-module.exports = { register, login, createUserByAdmin, getAttendance };
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    // Check if userId exists
+    if (!userId) {
+      return ApiResponse.error(res, "User ID not found", 401);
+    }
+
+    const user = await userService.getProfile(userId);
+    return ApiResponse.success(res, "User Fetched Successfully", user, 200);
+  } catch (error) {
+    return ApiResponse.error(
+      res,
+      `Failed to get the user profile: ${error.message}`,
+      500
+    );
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  createUserByAdmin,
+  getAttendance,
+  getProfile,
+};

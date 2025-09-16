@@ -29,15 +29,13 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     device: {
-      // deviceToken: {
-      //   type: String,
-      // },
-      // deviceName: {
-      //   type: String,
-      // },
-      ipAddess: {
-        type: String,
-      },
+      type: [
+        {
+          token: String,
+          userAgent: String,
+        },
+      ],
+      default: [],
     },
   },
   { timestamps: true }
