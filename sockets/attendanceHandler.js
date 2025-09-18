@@ -169,14 +169,14 @@ const handleAttendanceSockets = (io) => {
     });
 
     socket.on("disconnect", (reason) => {
-      console.log(`🔌 Client disconnected (${socket.id}):`, {
+      console.log(` Client disconnected (${socket.id}):`, {
         reason,
         timestamp: new Date().toISOString(),
       });
     });
 
     socket.on("error", (error) => {
-      console.error(`💥 Socket error for client ${socket.id}:`, error);
+      console.error(` Socket error for client ${socket.id}:`, error);
     });
   });
 };

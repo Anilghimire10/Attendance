@@ -1,4 +1,3 @@
-// services/userService.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
@@ -7,6 +6,10 @@ const Attendance = require("../models/Attendance");
 const generatePassword = require("generate-password");
 const { createEmailTemplate } = require("../views/emailTemplate");
 const { sendMail } = require("../utils/sendMail");
+
+const generateResetCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 const register = async (userData) => {
   const { userName, email, password } = userData;
@@ -61,7 +64,6 @@ const createUserByAdmin = async (adminId, userData) => {
     throw new Error("userName and email are required");
   }
 
-  // Generate a random password
   const randomPassword = generatePassword.generate({
     length: 8,
     numbers: true,
@@ -72,13 +74,11 @@ const createUserByAdmin = async (adminId, userData) => {
   });
   const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-  // Get the next userId
   const lastUser = await User.findOne({ createdBy: adminId })
     .sort({ userId: -1 })
     .select("userId");
   const nextUserId = lastUser ? lastUser.userId + 1 : 1;
 
-  // Create new user
   const newUser = new User({
     userName,
     email,
@@ -90,12 +90,11 @@ const createUserByAdmin = async (adminId, userData) => {
 
   await newUser.save();
 
-  // Send email with credentials
   const emailBody = createEmailTemplate(userName, email, randomPassword);
   try {
     await sendMail({
       recipientEmail: email,
-      subject: "Your New Account Credentials",
+      subject: "Welcome! Your New Account Credentials",
       emailBody,
     });
   } catch (error) {
@@ -113,10 +112,8 @@ const getAttendanceByRange = async (adminId, filters) => {
   try {
     const { userId, startDate, endDate, sessionId } = filters;
 
-    // Build query
     let query = {};
 
-    // Date range filter
     if (startDate || endDate) {
       query.date = {};
       if (startDate) {
@@ -131,17 +128,14 @@ const getAttendanceByRange = async (adminId, filters) => {
       }
     }
 
-    // Session filter
     if (sessionId) {
       query.sessionId = sessionId;
     }
 
-    // Find attendance records
     let attendanceRecords = await Attendance.find(query)
       .sort({ date: -1 })
       .lean();
 
-    // Filter by userId if provided
     if (userId) {
       attendanceRecords = attendanceRecords
         .map((record) => ({
@@ -153,7 +147,6 @@ const getAttendanceByRange = async (adminId, filters) => {
         .filter((record) => record.users.length > 0);
     }
 
-    // Format response
     const formattedRecords = attendanceRecords.map((record) => ({
       sessionId: record.sessionId,
       date: record.date,
@@ -180,7 +173,6 @@ const getAttendanceByRange = async (adminId, filters) => {
       updatedAt: record.updatedAt,
     }));
 
-    // Calculate summary statistics
     const totalSessions = formattedRecords.length;
     const totalAttendances = formattedRecords.reduce(
       (sum, record) => sum + record.totalUsers,
@@ -237,10 +229,110 @@ const getProfile = async (userId) => {
   }
 };
 
+const forgotPassword = async (email) => {
+  try {
+    console.log(`[ForgotPassword] Initiated for email: ${email}`);
+
+    let user = await Admin.findOne({ email });
+    let role = "admin";
+    console.log(
+      `[ForgotPassword] Checking Admin collection for email: ${email}`
+    );
+
+    if (!user) {
+      console.log(
+        `[ForgotPassword] Not found in Admin, checking User collection...`
+      );
+      user = await User.findOne({ email });
+      role = "user";
+    }
+
+    if (!user) {
+      console.warn(`[ForgotPassword] No user found with email: ${email}`);
+      throw new Error(
+        "If an account with that email exists, a reset code has been sent"
+      );
+    }
+
+    console.log(
+      `[ForgotPassword] User found with role: ${role}, id: ${user._id}`
+    );
+
+    const resetCode = generateResetCode();
+    console.log(`[ForgotPassword] Generated reset code: ${resetCode}`);
+
+    const hashedCode = await bcrypt.hash(resetCode, 10);
+    console.log(`[ForgotPassword] Hashed reset code generated`);
+
+    user.resetPasswordCode = hashedCode;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+    console.log(
+      `[ForgotPassword] Reset code & expiry saved for user: ${user._id}`
+    );
+
+    const emailBody = createEmailTemplate(
+      user.userName,
+      email,
+      null,
+      resetCode
+    );
+    console.log(`[ForgotPassword] Email template created for: ${email}`);
+
+    await sendMail({
+      recipientEmail: email,
+      subject: "🔒 Password Reset Code",
+      emailBody,
+    });
+    console.log(`[ForgotPassword] Reset email sent to: ${email}`);
+
+    return { message: "Password reset code sent" };
+  } catch (error) {
+    console.error(`[ForgotPassword] Error: ${error.message}`, error);
+    throw new Error(`Failed to send reset code: ${error.message}`);
+  }
+};
+
+const resetPassword = async (email, code, newPassword) => {
+  try {
+    let user = await Admin.findOne({
+      email,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      user = await User.findOne({
+        email,
+        resetPasswordExpires: { $gt: Date.now() },
+      });
+    }
+
+    if (!user) {
+      throw new Error("Invalid or expired reset code");
+    }
+
+    const isMatch = await bcrypt.compare(code, user.resetPasswordCode);
+    if (!isMatch) {
+      throw new Error("Invalid reset code");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordCode = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { message: "Password reset successfully" };
+  } catch (error) {
+    throw new Error(`Failed to reset password: ${error.message}`);
+  }
+};
 module.exports = {
   register,
   login,
   createUserByAdmin,
   getAttendanceByRange,
   getProfile,
+  forgotPassword,
+  resetPassword,
 };

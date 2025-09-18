@@ -16,7 +16,8 @@ router.post(
   userController.register
 );
 router.post("/login", validateRequest(loginSchema), userController.login);
-
+router.post("/forgot-password", userController.forgotPassword);
+router.post("/reset-password", userController.resetPassword);
 router.post(
   "/create",
   authMiddleware("admin"),

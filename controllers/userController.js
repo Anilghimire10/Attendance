@@ -14,7 +14,6 @@ const login = async (req, res) => {
   try {
     const userAgent = req.headers["user-agent"] || "Unknown";
     const deviceToken = req.body.deviceToken;
-    console.log("Device token:", deviceToken);
     const { token, user, role } = await userService.login({
       ...req.body,
       deviceToken,
@@ -98,10 +97,54 @@ const getProfile = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return ApiResponse.error(res, "Email is required", 400);
+    }
+
+    await userService.forgotPassword(email);
+    return ApiResponse.success(
+      res,
+      "If an account with that email exists, a password reset link has been sent",
+      null,
+      200
+    );
+  } catch (error) {
+    return ApiResponse.error(res, error.message, 400);
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!code || !newPassword) {
+      return ApiResponse.error(res, "Token and new password are required", 400);
+    }
+
+    if (newPassword.length < 6) {
+      return ApiResponse.error(
+        res,
+        "Password must be at least 6 characters long",
+        400
+      );
+    }
+
+    await userService.resetPassword(email, code, newPassword);
+    return ApiResponse.success(res, "Password reset successfully", null, 200);
+  } catch (error) {
+    return ApiResponse.error(res, error.message, 400);
+  }
+};
 module.exports = {
   register,
   login,
   createUserByAdmin,
   getAttendance,
   getProfile,
+  forgotPassword,
+  resetPassword,
 };
