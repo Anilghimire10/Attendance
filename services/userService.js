@@ -316,8 +316,8 @@ const resetPassword = async (email, code, newPassword) => {
       throw new Error("Invalid reset code");
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
+    // const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
     user.resetPasswordCode = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();

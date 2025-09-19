@@ -19,6 +19,7 @@ const authMiddleware =
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
+      console.log(decoded);
 
       if (roles.length && !roles.includes(decoded.role)) {
         return ApiResponse.error(res, "Unauthorized, role mismatch", 403);

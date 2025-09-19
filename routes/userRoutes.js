@@ -26,7 +26,7 @@ router.post(
 );
 router.get(
   "/attendance",
-  authMiddleware("admin"),
+  authMiddleware(["admin", "user"]),
   userController.getAttendance
 );
 
