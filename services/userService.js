@@ -98,7 +98,7 @@ const createUserByAdmin = async (adminId, userData) => {
       emailBody,
     });
   } catch (error) {
-    console.error(`Failed to send email to ${email}:`, error.message);
+    throw new Error(`Failed to send email to ${email}:, error.message`);
   }
 
   return {
@@ -231,45 +231,27 @@ const getProfile = async (userId) => {
 
 const forgotPassword = async (email) => {
   try {
-    console.log(`[ForgotPassword] Initiated for email: ${email}`);
-
     let user = await Admin.findOne({ email });
     let role = "admin";
-    console.log(
-      `[ForgotPassword] Checking Admin collection for email: ${email}`
-    );
 
     if (!user) {
-      console.log(
-        `[ForgotPassword] Not found in Admin, checking User collection...`
-      );
       user = await User.findOne({ email });
       role = "user";
     }
 
     if (!user) {
-      console.warn(`[ForgotPassword] No user found with email: ${email}`);
       throw new Error(
         "If an account with that email exists, a reset code has been sent"
       );
     }
 
-    console.log(
-      `[ForgotPassword] User found with role: ${role}, id: ${user._id}`
-    );
-
     const resetCode = generateResetCode();
-    console.log(`[ForgotPassword] Generated reset code: ${resetCode}`);
 
     const hashedCode = await bcrypt.hash(resetCode, 10);
-    console.log(`[ForgotPassword] Hashed reset code generated`);
 
     user.resetPasswordCode = hashedCode;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
-    console.log(
-      `[ForgotPassword] Reset code & expiry saved for user: ${user._id}`
-    );
 
     const emailBody = createEmailTemplate(
       user.userName,
@@ -277,18 +259,15 @@ const forgotPassword = async (email) => {
       null,
       resetCode
     );
-    console.log(`[ForgotPassword] Email template created for: ${email}`);
 
     await sendMail({
       recipientEmail: email,
       subject: "🔒 Password Reset Code",
       emailBody,
     });
-    console.log(`[ForgotPassword] Reset email sent to: ${email}`);
 
     return { message: "Password reset code sent" };
   } catch (error) {
-    console.error(`[ForgotPassword] Error: ${error.message}`, error);
     throw new Error(`Failed to send reset code: ${error.message}`);
   }
 };
