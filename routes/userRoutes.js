@@ -16,20 +16,24 @@ router.post(
   userController.register
 );
 router.post("/login", validateRequest(loginSchema), userController.login);
+
 router.post("/forgot-password", userController.forgotPassword);
+
 router.post("/reset-password", userController.resetPassword);
+
 router.post(
   "/create",
   authMiddleware("admin"),
   validateRequest(createUserSchema),
   userController.createUserByAdmin
 );
+
 router.get(
   "/attendance",
   authMiddleware(["admin", "user"]),
   userController.getAttendance
 );
 
-router.get("/", authMiddleware(), userController.getProfile);
+router.get("/", authMiddleware(["admin", "user"]), userController.getProfile);
 
 module.exports = router;

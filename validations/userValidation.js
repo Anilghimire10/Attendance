@@ -17,6 +17,7 @@ const createUserSchema = Joi.object({
   userName: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   role: Joi.string().valid("admin", "user").optional(),
+  designation: Joi.string().required(),
 });
 
 module.exports = {

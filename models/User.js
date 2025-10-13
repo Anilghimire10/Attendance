@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       index: true,
       unique: true,
     },
+    designation: {
+      type: String,
+      required: true,
+    },
     role: {
       type: String,
       enum: ["user", "admin"], // Restrict to valid roles
